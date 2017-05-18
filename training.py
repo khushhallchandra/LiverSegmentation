@@ -24,7 +24,10 @@ bs = 4
 epochs = 10
 
 # train
+model.m = m
+model.s = s
 history = model.fit(x,y, batch_size=bs, epochs=epochs,validation_data=(xv, yv), shuffle=True)
+
 
 # save results
 save_model(model, history, 'livernet')

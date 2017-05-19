@@ -1,3 +1,4 @@
+"""models implemented for usage in this project"""
 from keras.models import Model
 from keras.layers import Input, Convolution2D, BatchNormalization, UpSampling2D
 from keras.layers.merge import concatenate

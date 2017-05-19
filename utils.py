@@ -1,7 +1,18 @@
+"""utility functions for this project"""
 import os
 import json
 import numpy as np
 from keras.models import model_from_json
+
+
+def to_categorical(im, n_classes):
+    """converts label image to categorical numpy array"""
+    s = im.shape
+    categorical = np.zeros((s[0], s[1], n_classes), dtype=np.uint8)
+    for class_i in range(n_classes):
+        categorical[:, :, class_i] = im == class_i
+    return categorical
+
 
 def save_model(model, history, name):
     h = json.dumps(history.history)
@@ -33,3 +44,17 @@ def load_model(name):
     model.s = norm_data['s']
 
     return model
+
+
+def stats_np(y_true, y_pred, n_classes):
+    """calculates dice coefficient between two numpy arrays"""
+    labels = np.argmax(y_pred, axis=1)
+    prediction = np.array([np.rollaxis(to_categorical(label, n_classes=n_classes),2) for label in labels])
+    tp = np.count_nonzero(np.logical_and(prediction == 1, y_true == 1))
+    fp = np.count_nonzero(np.logical_and(prediction == 1, y_true == 0))
+    fn = np.count_nonzero(np.logical_and(prediction == 0, y_true == 1))
+    tn = np.count_nonzero(np.logical_and(prediction == 0, y_true == 0))
+    dice = 2.0 * tp / (2.0 * tp + fn + fp)
+    ppv = tp / float(tp + fp)
+    sens = tp / float(tp + fn)
+    return dice, ppv, sens

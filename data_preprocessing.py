@@ -1,23 +1,17 @@
+"""all functions necessary for preprocessing the dataset before training """
 import os
 import numpy as np
 from scipy.misc import imread
 from glob import glob
 from tqdm import tqdm
 
-
-def to_categorical(im, n_classes):
-    """converts label image to categorical numpy array"""
-    s = im.shape
-    categorical = np.zeros((s[0], s[1], n_classes), dtype=np.uint8)
-    for class_i in range(n_classes):
-        categorical[:, :, class_i] = im == class_i
-    return categorical
+from utils import to_categorical
 
 
 def load_data(data_folder, seg_folder, im_size=(128, 128, 3), n_classes=2, ext='png'):
     """loads images into numpy arrays"""
     train_list = glob(os.path.join(data_folder, 'train', '*.' + ext))
-    val_list = glob(os.path.join(data_folder, 'val', '*.png'))
+    val_list = glob(os.path.join(data_folder, 'val', '*.' + ext))
 
     n_train = len(train_list)
     n_val = len(val_list)
@@ -109,7 +103,7 @@ def normalize_data(x, xv):
     return x, xv, m, s
 
 
-if __name__ == '__main__':
+def run_default():
     # import matplotlib.pyplot as plt
 
     data_folder = os.path.join('.', 'data', 'ct')
@@ -118,4 +112,4 @@ if __name__ == '__main__':
     x, y, xv, yv = load_data(data_folder, label_folder, im_size=(512, 512, 1), n_classes=3)
     x, xv, m, s = normalize_data(x, xv)
 
-    np.savez(os.path.join('.', 'data','liver_dataset.npz'), x=x, y=y, xv=xv, yv=yv, m=m, s=s)
+    np.savez(os.path.join('.', 'data', 'liver_dataset.npz'), x=x, y=y, xv=xv, yv=yv, m=m, s=s)

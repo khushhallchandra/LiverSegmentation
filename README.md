@@ -1,4 +1,35 @@
 # LiverSegmentation
 suggested solution for Liver segmentation TAU project
 
-run preprocess_data.py before training, it assumes you have your data in a folder named "data"
+training procedure:
+- put the provided data in the main folder, under the folder `data`
+- run `data_preprocessing.py`, this should create a file named `liver_dataset.npz` in you `data` folder
+- run `training.py`, this should save trained net files. the results of my training session are saved under `trained_model` folder
+- `predict_test.py` is an example script that predicts on a test folder
+
+training output:
+```
+Using Theano backend.
+WARNING (theano.sandbox.cuda): The cuda backend is deprecated and will be removed in the next release (v0.10).  Please switch to the gpuarray backend. You can get more information about how to switch at this URL:
+ https://github.com/Theano/Theano/wiki/Converting-to-the-new-gpu-back-end%28gpuarray%29
+
+Using gpu device 0: GeForce GTX 650 Ti (CNMeM is disabled, cuDNN 5110)
+Train on 1092 samples, validate on 500 samples
+Epoch 1/6
+1092/1092 [==============================] - 305s - loss: 0.0612 - acc: 0.9731 - val_loss: 0.0215 - val_acc: 0.9924
+Epoch 2/6
+1092/1092 [==============================] - 305s - loss: 0.0193 - acc: 0.9917 - val_loss: 0.0189 - val_acc: 0.9937
+Epoch 3/6
+1092/1092 [==============================] - 306s - loss: 0.0135 - acc: 0.9939 - val_loss: 0.0225 - val_acc: 0.9941
+Epoch 4/6
+1092/1092 [==============================] - 306s - loss: 0.0086 - acc: 0.9967 - val_loss: 0.0237 - val_acc: 0.9934
+Epoch 5/6
+1092/1092 [==============================] - 306s - loss: 0.0079 - acc: 0.9969 - val_loss: 0.0194 - val_acc: 0.9940
+Epoch 6/6
+1092/1092 [==============================] - 306s - loss: 0.0063 - acc: 0.9975 - val_loss: 0.0221 - val_acc: 0.9937
+
+liver segmentation stats:
+dice coeff = 0.990807830811   ppv = 0.990807830811   sensitivity = 0.990807830811
+cancer segmentation stats:
+dice coeff = 0.969423287535   ppv = 0.940785339355   sensitivity = 0.999859480348
+```

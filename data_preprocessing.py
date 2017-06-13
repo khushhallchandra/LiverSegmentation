@@ -33,23 +33,10 @@ def load_data(data_folder, seg_folder,
     # init numpy arrays
     dataset = init_dataset(im_size, n_train, n_val, n_classes)
 
+    labels_folder = os.path.join(seg_folder, 'train')
     for train_i, im_name in enumerate(train_list):
-        bname = os.path.basename(im_name)
-        labelname = os.path.join(
-            seg_folder, 'train', bname.replace('ct', 'seg'))
-
-        im = imread(im_name)
-        scaled_label = imread(labelname)[:, :, 0] / 127
-        cat_label = to_categorical(scaled_label, n_classes)
-
-        if np.ndim(im) < len(im_size):
-            im = np.expand_dims(im, 2)
-        if im.shape[2] > im_size[2]:
-            im = im[:, :, :im_size[2]]
-
-        # convert to theano dim ordering
-        im = np.rollaxis(im, 2)
-        cat_label = np.rollaxis(cat_label, 2)
+        im, cat_label = read_image_and_label(
+            im_name, labels_folder, im_size, n_classes)
 
         dataset['x'][train_i] = im
         dataset['y'][train_i] = cat_label
@@ -61,21 +48,10 @@ def load_data(data_folder, seg_folder,
         # plt.imshow(scaled_label[:,:,0], cmap='jet', alpha=0.3, vmin=0, vmax=2)
         # plt.pause(0.2)
 
+    labels_folder = os.path.join(seg_folder, 'val')
     for val_i, im_name in enumerate(val_list):
-        bname = os.path.basename(im_name)
-        labelname = os.path.join(seg_folder, 'val', bname.replace('ct', 'seg'))
-
-        im = imread(im_name)
-        cat_label = to_categorical(imread(labelname)[:, :, 0] / 127, n_classes)
-
-        if np.ndim(im) < len(im_size):
-            im = np.expand_dims(im, 2)
-        if im.shape[2] > im_size[2]:
-            im = im[:, :, :im_size[2]]
-
-        # convert to theano dim ordering
-        im = np.rollaxis(im, 2)
-        cat_label = np.rollaxis(cat_label, 2)
+        im, cat_label = read_image_and_label(
+            im_name, labels_folder, im_size, n_classes)
 
         dataset['xv'][val_i] = im
         dataset['yv'][val_i] = cat_label
@@ -89,6 +65,25 @@ def init_dataset(im_size, n_train, n_val, n_classes):
     yv = np.zeros((n_val, n_classes, im_size[0], im_size[1]))
     dataset = dict(x=x, y=y, xv=xv, yv=yv)
     return dataset
+
+
+def read_image_and_label(im_name, labels_folder, im_size, n_classes):
+    bname = os.path.basename(im_name)
+    labelname = os.path.join(
+        labels_folder, bname.replace('ct', 'seg'))
+    im = imread(im_name)
+    scaled_label = imread(labelname)[:, :, 0] / 127
+    cat_label = to_categorical(scaled_label, n_classes)
+
+    if np.ndim(im) < len(im_size):
+        im = np.expand_dims(im, 2)
+    if im.shape[2] > im_size[2]:
+        im = im[:, :, :im_size[2]]
+
+    # convert to theano dim ordering
+    im = np.rollaxis(im, 2)
+    cat_label = np.rollaxis(cat_label, 2)
+    return im, cat_label
 
 
 def normalize_data(x, xv):

@@ -7,9 +7,9 @@ from tqdm import tqdm
 from utils import to_categorical
 
 
-def preprocess_data_folder():
-    data_folder = os.path.join('.', 'data', 'ct')
-    label_folder = os.path.join('.', 'data', 'seg')
+def preprocess_data_folder(data_folder):
+    data_folder = os.path.join(data_folder, 'ct')
+    label_folder = os.path.join(data_folder, 'seg')
 
     dataset = load_data(data_folder, label_folder,
                         im_size=(512, 512, 1), n_classes=3)

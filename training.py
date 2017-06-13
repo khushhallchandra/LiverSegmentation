@@ -1,4 +1,3 @@
-"""main training script"""
 import os
 import numpy as np
 from models import unet
@@ -13,7 +12,7 @@ dataset_name = os.path.join('.', 'data', 'liver_dataset.npz')
 
 # preprocess data if necessary
 if not os.path.isfile(dataset_name):
-    data_preprocessing.run_default()
+    data_preprocessing.preprocess_data_folder(os.path.join('.', 'data'))
 
 # load data
 dataset = np.load(dataset_name)

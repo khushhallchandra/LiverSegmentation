@@ -16,7 +16,8 @@ if not os.path.isfile(dataset_name):
 
 # load data
 dataset = np.load(dataset_name)
-x, y, xv, yv, m, s = dataset['x'], dataset['y'], dataset['xv'], dataset['yv'], dataset['m'], dataset['s']
+x, y, xv, yv = dataset['x'], dataset['y'], dataset['xv'], dataset['yv']
+m, s = dataset['m'], dataset['s']
 
 model = unet(
     im_size=im_size, output_size=n_classes,
@@ -30,7 +31,9 @@ epochs = 6
 # train
 model.m = m
 model.s = s
-history = model.fit(x, y, batch_size=bs, epochs=epochs, validation_data=(xv, yv), shuffle=True)
+history = model.fit(
+    x, y, batch_size=bs, epochs=epochs,
+    validation_data=(xv, yv), shuffle=True)
 
 # save results
 save_model(model, history, 'livernet')
@@ -48,10 +51,14 @@ true_cancer = yv[:, [0, 2]]
 predicted_cancer = y_hat[:, [0, 2]]
 
 # collect statistics
-dice_liver, ppv_liver, sens_liver = segmentation_stats(true_liver, predicted_liver, 2)
-dice_ca, ppv_ca, sens_ca = segmentation_stats(true_cancer, predicted_cancer, 2)
+dice_liver, ppv_liver, sens_liver = \
+    segmentation_stats(true_liver, predicted_liver, 2)
+dice_ca, ppv_ca, sens_ca = \
+    segmentation_stats(true_cancer, predicted_cancer, 2)
 
 print 'liver segmentation stats:'
-print 'dice coeff = {}   ppv = {}   sensitivity = {}'.format(dice_liver, ppv_liver, sens_liver)
+print 'dice coeff = {}   ppv = {}   sensitivity = {}'.format(
+    dice_liver, ppv_liver, sens_liver)
 print 'cancer segmentation stats:'
-print 'dice coeff = {}   ppv = {}   sensitivity = {}'.format(dice_ca, ppv_ca, sens_ca)
+print 'dice coeff = {}   ppv = {}   sensitivity = {}'.format(
+    dice_ca, ppv_ca, sens_ca)

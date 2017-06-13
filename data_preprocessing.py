@@ -14,11 +14,10 @@ def preprocess_data_folder():
     dataset = load_data(data_folder, label_folder,
                         im_size=(512, 512, 1), n_classes=3)
 
-    dataset['x'], dataset['xv'], dataset['m'], dataset['s'] = \
-        normalize_data(dataset['x'], dataset['xv'])
+    dataset_normalized = normalize_data(dataset)
 
     dataset_file = os.path.join('.', 'data', 'liver_dataset.npz')
-    np.savez(dataset_file, **dataset)
+    np.savez(dataset_file, **dataset_normalized)
 
 
 def load_data(data_folder, seg_folder,
@@ -27,34 +26,27 @@ def load_data(data_folder, seg_folder,
     train_list = glob(os.path.join(data_folder, 'train', '*.' + ext))
     val_list = glob(os.path.join(data_folder, 'val', '*.' + ext))
 
-    n_train = len(train_list)
-    n_val = len(val_list)
+    n_train, n_val = len(train_list), len(val_list)
 
-    # init numpy arrays
     dataset = init_dataset(im_size, n_train, n_val, n_classes)
 
-    labels_folder = os.path.join(seg_folder, 'train')
+    train_labels_folder = os.path.join(seg_folder, 'train')
+    val_labels_folder = os.path.join(seg_folder, 'val')
+
     for train_i, im_name in enumerate(train_list):
         im, cat_label = read_image_and_label(
-            im_name, labels_folder, im_size, n_classes)
+            im_name, train_labels_folder, im_size, n_classes)
 
         dataset['x'][train_i] = im
         dataset['y'][train_i] = cat_label
 
-        # sanity check
-        # plt.figure(1)
-        # plt.clf()
-        # plt.imshow(im[:,:,0], cmap='gray')
-        # plt.imshow(scaled_label[:,:,0], cmap='jet', alpha=0.3, vmin=0, vmax=2)
-        # plt.pause(0.2)
-
-    labels_folder = os.path.join(seg_folder, 'val')
     for val_i, im_name in enumerate(val_list):
         im, cat_label = read_image_and_label(
-            im_name, labels_folder, im_size, n_classes)
+            im_name, val_labels_folder, im_size, n_classes)
 
         dataset['xv'][val_i] = im
         dataset['yv'][val_i] = cat_label
+
     return dataset
 
 
@@ -68,53 +60,84 @@ def init_dataset(im_size, n_train, n_val, n_classes):
 
 
 def read_image_and_label(im_name, labels_folder, im_size, n_classes):
+    im = imread(im_name)
+    im = adjust_color_channels(im, im_size)
+
     bname = os.path.basename(im_name)
     labelname = os.path.join(
         labels_folder, bname.replace('ct', 'seg'))
-    im = imread(im_name)
-    scaled_label = imread(labelname)[:, :, 0] / 127
-    cat_label = to_categorical(scaled_label, n_classes)
 
+    cat_label = read_label(labelname, n_classes)
+
+    im, cat_label = change_dim_ordering_to_theano(im, cat_label)
+
+    return im, cat_label
+
+
+def adjust_color_channels(im, im_size):
     if np.ndim(im) < len(im_size):
         im = np.expand_dims(im, 2)
     if im.shape[2] > im_size[2]:
         im = im[:, :, :im_size[2]]
+    return im
 
-    # convert to theano dim ordering
+
+def read_label(full_label_name, n_classes):
+    scaled_label = imread(full_label_name)[:, :, 0] / 127
+    cat_label = to_categorical(scaled_label, n_classes)
+    return cat_label
+
+
+def change_dim_ordering_to_theano(im, cat_label):
     im = np.rollaxis(im, 2)
     cat_label = np.rollaxis(cat_label, 2)
     return im, cat_label
 
 
-def normalize_data(x, xv):
+def normalize_data(dataset):
     """for each sample in dataset subtracts pixelwise mean,
     and divides by pixelwise std"""
-    m = np.zeros((x.shape[1], x.shape[2], x.shape[3]))
-    s2 = np.zeros((x.shape[1], x.shape[2], x.shape[3]))
 
-    n_train = x.shape[0]
-    n_val = xv.shape[0]
+    n_train = dataset['x'].shape[0]
+    n_val = dataset['xv'].shape[0]
     n = n_train + n_val
 
-    # calculate pixelwise mean
-    for sample in x:
-        m += sample / float(n)
-    for sample in xv:
-        m += sample / float(n)
+    mean_image = pixelwise_mean_memory_efficient(
+        [dataset['x'], dataset['xv']], n)
+    std_image = pixelwise_std_memory_efficient(
+        [dataset['x'], dataset['xv']], n, mean_image)
 
-    # calculate pixelwise std
-    for sample in x:
-        s2 += (sample - m) ** 2 / float(n)
-    for sample in xv:
-        s2 += (sample - m) ** 2 / float(n)
+    dataset['x'] = normalize_array_memory_efficient(
+        dataset['x'], mean_image, std_image,
+        msg='normalizing training data')
 
-    s = np.sqrt(s2)
-    s += 1  # to avoid division by zero
+    dataset['xv'] = normalize_array_memory_efficient(
+        dataset['xv'], mean_image, std_image,
+        msg='normalizing validation data')
 
-    # normalize data
-    for train_i in tqdm(range(x.shape[0]), desc='normalizing training data'):
-        x[train_i] = (x[train_i] - m) / s
-    for val_i in tqdm(range(xv.shape[0]), desc='normalizing val data'):
-        xv[val_i] = (xv[val_i] - m) / s
+    dataset['m'] = mean_image
+    dataset['s'] = std_image
+    return dataset
 
-    return x, xv, m, s
+
+def pixelwise_mean_memory_efficient(arrays, n_samples):
+    mean_image = np.zeros(arrays[0][0].shape, dtype=np.float32)
+    for arr in arrays:
+        for sample in arr:
+            mean_image += sample / n_samples
+    return mean_image
+
+
+def pixelwise_std_memory_efficient(arrays, n_samples, mean_image):
+    var_image = np.zeros(arrays[0][0].shape, dtype=np.float32)
+    for arr in arrays:
+        for sample in arr:
+            var_image += (sample - mean_image) ** 2 / float(n_samples)
+    std_image = np.sqrt(var_image)
+    return std_image
+
+
+def normalize_array_memory_efficient(x, mean_image, std_image, msg=''):
+    for ind in tqdm(range(len(x)), desc=msg):
+        x[ind] -= (x[ind] - mean_image) / std_image
+    return x

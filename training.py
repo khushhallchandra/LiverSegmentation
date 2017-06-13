@@ -3,7 +3,7 @@ import os
 import numpy as np
 from models import unet
 
-from utils import save_model, stats_np
+from utils import save_model, segmentation_stats
 import data_preprocessing
 
 # constants
@@ -49,8 +49,8 @@ true_cancer = yv[:, [0, 2]]
 predicted_cancer = y_hat[:, [0, 2]]
 
 # collect statistics
-dice_liver, ppv_liver, sens_liver = stats_np(true_liver, predicted_liver, 2)
-dice_ca, ppv_ca, sens_ca = stats_np(true_cancer, predicted_cancer, 2)
+dice_liver, ppv_liver, sens_liver = segmentation_stats(true_liver, predicted_liver, 2)
+dice_ca, ppv_ca, sens_ca = segmentation_stats(true_cancer, predicted_cancer, 2)
 
 print 'liver segmentation stats:'
 print 'dice coeff = {}   ppv = {}   sensitivity = {}'.format(dice_liver, ppv_liver, sens_liver)

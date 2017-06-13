@@ -30,9 +30,14 @@ def load_model(name):
     arch_name = name + '_arch.txt'
     norm_name = name + '_normalization.npz'
 
-    assert os.path.isfile(weight_name), 'weights file not found: {}'.format(weight_name)
-    assert os.path.isfile(arch_name), 'arcitecture file not found: {}'.format(weight_name)
-    assert os.path.isfile(norm_name), 'normalization file not found: {}'.format(norm_name)
+    assert os.path.isfile(weight_name), \
+        'weights file not found: {}'.format(weight_name)
+
+    assert os.path.isfile(arch_name), \
+        'arcitecture file not found: {}'.format(weight_name)
+
+    assert os.path.isfile(norm_name), \
+        'normalization file not found: {}'.format(norm_name)
 
     with open(arch_name, 'r') as f:
         arch_str = f.read()
@@ -46,10 +51,11 @@ def load_model(name):
     return model
 
 
-def stats_np(y_true, y_pred, n_classes):
-    """calculates dice coefficient between two numpy arrays"""
+def segmentation_stats(y_true, y_pred, n_classes):
     labels = np.argmax(y_pred, axis=1)
-    prediction = np.array([np.rollaxis(to_categorical(label, n_classes=n_classes),2) for label in labels])
+    prediction = np.array(
+        [np.rollaxis(to_categorical(label, n_classes=n_classes), 2)
+         for label in labels])
     tp = np.count_nonzero(np.logical_and(prediction == 1, y_true == 1))
     fp = np.count_nonzero(np.logical_and(prediction == 1, y_true == 0))
     fn = np.count_nonzero(np.logical_and(prediction == 0, y_true == 1))

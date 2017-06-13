@@ -1,4 +1,3 @@
-"""models implemented for usage in this project"""
 from keras.models import Model
 from keras.layers import Input, Convolution2D, BatchNormalization, UpSampling2D
 from keras.layers.merge import concatenate
@@ -16,7 +15,7 @@ def unet(im_size=(128, 128, 3), output_size=1,
 
     x = Convolution2D(
         input_shape=input_shape, filters=n_filters,
-        kernel_size=filter_size,data_format='channels_first',
+        kernel_size=filter_size, data_format='channels_first',
         activation='relu',
         padding='same', name='input_conv')(input)
 
@@ -62,8 +61,8 @@ def unet(im_size=(128, 128, 3), output_size=1,
                       activation='sigmoid',
                       padding='same', data_format='channels_first')(x)
 
-    unet = Model(inputs=[input], outputs=[x])
-    unet.compile(optimizer='adamax',
-                 loss='binary_crossentropy', metrics=['accuracy'])
+    unet_model = Model(inputs=[input], outputs=[x])
+    unet_model.compile(optimizer='adamax',
+                       loss='binary_crossentropy', metrics=['accuracy'])
 
-    return unet
+    return unet_model

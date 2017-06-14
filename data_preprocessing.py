@@ -8,10 +8,10 @@ from utils import to_categorical
 
 
 def preprocess_data_folder(data_folder):
-    data_folder = os.path.join(data_folder, 'ct')
+    image_data_folder = os.path.join(data_folder, 'ct')
     label_folder = os.path.join(data_folder, 'seg')
 
-    dataset = load_data(data_folder, label_folder,
+    dataset = load_data(image_data_folder, label_folder,
                         im_size=(512, 512, 1), n_classes=3)
 
     dataset_normalized = normalize_data(dataset)
@@ -33,6 +33,7 @@ def load_data(data_folder, seg_folder,
     train_labels_folder = os.path.join(seg_folder, 'train')
     val_labels_folder = os.path.join(seg_folder, 'val')
 
+    print 'packing training set'
     for train_i, im_name in enumerate(train_list):
         im, cat_label = read_image_and_label(
             im_name, train_labels_folder, im_size, n_classes)
@@ -40,6 +41,7 @@ def load_data(data_folder, seg_folder,
         dataset['x'][train_i] = im
         dataset['y'][train_i] = cat_label
 
+    print 'packing validation set'
     for val_i, im_name in enumerate(val_list):
         im, cat_label = read_image_and_label(
             im_name, val_labels_folder, im_size, n_classes)
@@ -124,7 +126,7 @@ def pixelwise_mean_memory_efficient(arrays, n_samples):
     mean_image = np.zeros(arrays[0][0].shape, dtype=np.float32)
     for arr in arrays:
         for sample in arr:
-            mean_image += sample / n_samples
+            mean_image += sample / float(n_samples)
     return mean_image
 
 
@@ -139,5 +141,5 @@ def pixelwise_std_memory_efficient(arrays, n_samples, mean_image):
 
 def normalize_array_memory_efficient(x, mean_image, std_image, msg=''):
     for ind in tqdm(range(len(x)), desc=msg):
-        x[ind] -= (x[ind] - mean_image) / std_image
+        x[ind] = (x[ind] - mean_image) / (std_image + 1e-12)
     return x
